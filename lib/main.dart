@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import './screens/home_screen.dart';
 import './screens/auth_screen.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      // DEBUGバーを消す
-      debugShowCheckedModeBanner: false,
-      title: 'My Template',
+      title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.pink,
         backgroundColor: Colors.pink,
@@ -23,7 +24,16 @@ class MyApp extends StatelessWidget {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20))),
       ),
-      home: AuthScreen(),
+      home: StreamBuilder(
+        stream: FirebaseAuth.instance.onAuthStateChanged,
+        builder: (ctx, userSnapshot) {
+          if (userSnapshot.hasData) {
+            return HomeScreen();
+          } else {
+            return AuthScreen();
+          }
+        },
+      ),
     );
   }
 }
