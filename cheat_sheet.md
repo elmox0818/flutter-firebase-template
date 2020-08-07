@@ -2,6 +2,8 @@
 
 ## Firestore
 
+`import 'package:cloud_firestore/cloud_firestore.dart';`
+
 ### データを取得してリスト表示したい
 
 ```
@@ -123,6 +125,8 @@ service cloud.firestore {
 
 ## Firebase Auth
 
+`import 'package:firebase_auth/firebase_auth.dart';`
+
 ### 認証によって画面を切り替える
 
 ```
@@ -159,6 +163,7 @@ appBar: AppBar(
         title: Text('Sample'),
         actions: <Widget>[
           DropdownButton(
+            underline: Container(),
             icon: Icon(
               Icons.more_vert,
               color: Theme.of(context).primaryIconTheme.color,
@@ -265,13 +270,132 @@ authResult = await _auth.createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
-        await Firestore.instance
-            .collection('users')
-            .document(authResult.user.uid)
-            .setData({
-          'username': username,
-          'email': email,
-        });
+
+await Firestore.instance
+    .collection('users')
+    .document(authResult.user.uid)
+    .setData({
+  'username': username,
+  'email': email,
+});
 .
 .
+```
+
+## Firebase Storage
+
+### ファイルを登録したい
+
+```
+.
+.
+final ref = FirebaseStorage.instance
+            .ref()
+            .child('images')
+            .child('image.jpg');
+
+await ref.putFile(imageFile).onComplete;
+.
+.
+```
+
+### 登録したファイルの URL を取得したい
+
+```
+.
+.
+inal ref = FirebaseStorage.instance
+            .ref()
+            .child('images')
+            .child('image.jpg');
+final url = await ref.getDownloadURL();
+.
+.
+```
+
+## Firebase Cloud Messaging
+
+### iOS に通知を送るときの設定
+
+```
+@override
+void initState() {
+  super.initState();
+  final fbM = FirebaseMessaging();
+  fbM.requestNotificationPermissions();
+  fbM.configure(onMessage: (message) {
+    print(message);
+    return;
+  }, onLaunch: (message) {
+    // 起動していない時に来た通知をタップしたときの処理
+    print(message);
+    return;
+  }, onResume: (message) {
+    // バックグラウンドで起動中にきた通知をタップしたときの処理
+    print(message);
+    return;
+  });
+}
+```
+
+## Firebase Cloud Functions
+
+### 初期設定
+
+firebase-tools をインストールしてからプロジェクト階層で init、Functions を選択。functions フォルダが生成される。
+
+```
+$ npm install -g firebase-tools
+$ firebase init
+```
+
+node のバージョン 10 は現在、課金アカウントでのみ利用可能。必要に応じて package.json のバージョンを変更する。
+
+```
+  "engines": {
+    "node": "10"
+  },
+```
+
+### Firestore をトリガーに処理したい
+
+公式ドキュメント
+
+> [https://firebase.google.com/docs/firestore/extend-with-functions?hl=ja](https://firebase.google.com/docs/firestore/extend-with-functions?hl=ja)
+
+### Firestore にデータが書き込まれた時にユーザに通知したい
+
+flutter 側
+
+```
+@override
+void initState() {
+  super.initState();
+  final fbM = FirebaseMessaging();
+  fbM.requestNotificationPermissions();
+  .
+  .
+  fbM.subscribeToTopic('messages');
+}
+```
+
+functions 側 index.js
+
+```
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+
+admin.initializeApp();
+
+exports.myFunction = functions.firestore
+  .document("chat/{message}")
+  .onCreate((snapshot, context) => {
+    return admin.messaging().sendToTopic("chat", {
+      notification: {
+        title: snapshot.data().username,
+        body: snapshot.data().text,
+        clickAction: "FLUTTER_NOTIFICATION_CLICK",
+      },
+    });
+  });
 ```
